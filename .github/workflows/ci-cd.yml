@@ -2,9 +2,7 @@
 # PHASE D caller: a realistic matrix (3 Python versions × 2 tox envs = 6
 # legs) -- the caller owns 100% of this orchestration decision; the
 # reusable workflow's code hasn't changed to support more legs, because it
-# never needed to know how many there'd be. The `pre-commit` toxenv reuses
-# this repo's own .pre-commit-config.yaml -- a real matrix dimension, not
-# a purpose-built teaching env like `needs-jq` used to be.
+# never needed to know how many there'd be.
 
 name: CI
 
