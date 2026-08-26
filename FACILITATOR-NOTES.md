@@ -40,6 +40,35 @@ checkout" — this is **not** an input at all; it's a hook
 usually the trick participants miss: not every new requirement is a new
 input. Use it to segue directly into why Pattern 4 exists.
 
+## Design-first framing questions — expected answers (Patterns 2, 3, 5)
+
+Pattern 1 (above) and Pattern 4 already pose a question before revealing
+the mechanism. These three round out the other patterns the same way —
+posed in `../SCHEDULE.md`'s per-block notes, expected answers here so
+you're not deriving them live:
+
+- **Pattern 2 (0:40–0:50):** "How would you test 5 Python versions if the
+  reusable workflow only takes one?" Typical answers: "call it in a loop,"
+  "duplicate the job 5 times," occasionally someone already knows
+  `strategy: matrix:`. Whatever they propose, point out it requires
+  *editing the reusable workflow* to add iteration — then reveal that
+  native GH Actions matrix strategy needs zero changes to it at all,
+  because the caller owns the loop.
+- **Pattern 3 (0:50–1:00):** "How long does it take you to tell
+  'environment broke' from 'test failed' in your own CI?" Typical answer:
+  "I have to scroll/read the log." Bridge line: `--notest` isn't a
+  nice-to-have verbosity trick, it's a *structural* separation — which
+  stage ran tells you the answer before you read a single log line.
+- **Pattern 5 (1:58–2:08):** "Should a Python 3.15 alpha test failure fail
+  your whole CI?" Typical answers split between "no, alphas are expected to
+  be broken sometimes" and "depends, make it configurable." Both are
+  right, which is exactly the point: the real workflow does *both* —
+  auto-forgiveness for prerelease version strings (`~`/`-dev`/`alpha`) as
+  the one narrow exception, `xfail` as the required explicit override for
+  every other case. If nobody mentions "what about a deliberately-broken
+  test I know will fail," that's a good follow-up prompt to get to `xfail`
+  from the discussion instead of just stating it.
+
 ## Attribution — say it this way on stage
 
 - `--notest` two-phase provisioning: "an idea from tox's own `--notest`
