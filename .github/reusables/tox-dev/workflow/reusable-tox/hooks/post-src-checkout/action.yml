@@ -1,0 +1,35 @@
+---
+# Purpose-built teaching example: real production hooks (see
+# reference/reusable-tox-annotated.md and the facilitator's live "reveal")
+# are release-automation-specific and too narrow to learn the general shape
+# from. This one does something genuinely useful and easy to verify: it
+# installs `jq`, but ONLY for the `toxenv` that actually needs it -- so you
+# practice parsing `calling-job-context`, not just the file-exists gate.
+
+inputs:
+  calling-job-context:
+    description: A JSON string with the calling job's inputs
+    type: string
+  current-job-steps:
+    description: A JSON string with this job's steps so far
+    type: string
+  job-dependencies-context:
+    default: >-
+      {}
+    description: A JSON string with the calling workflow's `needs` context
+    required: false
+    type: string
+
+runs:
+  using: composite
+  steps:
+  - name: Install jq (only for the `needs-jq` tox environment)
+    if: fromJSON(inputs.calling-job-context).toxenv == 'needs-jq'
+    run: sudo apt-get update && sudo apt-get install --yes jq
+    shell: bash
+  - name: Log that no system dependency was needed for this toxenv
+    if: fromJSON(inputs.calling-job-context).toxenv != 'needs-jq'
+    run: >-
+      echo "toxenv is '${{ fromJSON(inputs.calling-job-context).toxenv }}',
+      nothing to install here."
+    shell: bash
