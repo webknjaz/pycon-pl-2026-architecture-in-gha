@@ -1,20 +1,23 @@
 ---
-# Phase C's hook exercise: render coverage as a markdown table in the job
-# summary. Gated on `toxenv == 'py'` -- the same idiom the pattern always
-# uses (fromJSON(inputs.calling-job-context).toxenv == '...') -- so it
-# doesn't try to report coverage for a leg that never ran pytest-cov (e.g.
-# the `pre-commit` toxenv leg in this repo's own caller matrix).
+# ANSWER-KEY-ONLY REVEAL (see ../../../../../../../../FACILITATOR-NOTES.md).
+# Not something participants build hands-on -- this is the "here's how
+# test/coverage reporting SHOULD be architected" reveal for Phase C.
 #
-# This is the direct answer to "whatever happened to the outputs mechanism
-# Phase B skipped?" -- the real reusable-tox.yml bakes this kind of
-# reporting into unconditional CORE steps (test-summary/action,
-# irongut/CodeCoverageSummary, codecov-action); that's arguably
-# inconsistent with Pattern 4's own "extend without modifying core"
-# philosophy. This hook is how you'd actually place it correctly. See
-# reference/coverage-reporting-hook.md for the full story and correct
-# attribution (the one-liner is real, from aio-libs/propcache, but lives
-# in a hand-rolled non-tox job there -- nobody has this exact hook in
-# production yet).
+# The real tox-dev/workflow bakes JUnit/Cobertura-summary and Codecov
+# upload into unconditional CORE steps (see
+# reference/reusable-tox-annotated.md) -- arguably inconsistent with
+# Pattern 4's own "extend without modifying core" philosophy. This hook is
+# the fix: the exact same information, produced entirely from a
+# `post-tox-run` extension point, no core workflow changes, no external
+# SaaS account (Codecov/Coveralls) required.
+#
+# Real precedent for hook-based reporting exists but is narrower: awx-plugins,
+# awx_plugins.interfaces, and aio-libs/propcache all have a real
+# `post-tox-job` hook uploading MyPy coverage to Coveralls. The clean
+# `coverage report --format=markdown` one-liner below is real too (used in
+# aio-libs/propcache) -- but there it lives in a hand-rolled `test:` job
+# that doesn't call reusable-tox.yml at all. This hook is the synthesis:
+# the real one-liner, wired into the real hook mechanism, tested here.
 
 inputs:
   calling-job-context:
