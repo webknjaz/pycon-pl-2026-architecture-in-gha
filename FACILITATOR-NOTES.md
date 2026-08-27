@@ -69,6 +69,38 @@ you're not deriving them live:
   test I know will fail," that's a good follow-up prompt to get to `xfail`
   from the discussion instead of just stating it.
 
+## Coverage-reporting hook reveal (1:38–1:58, second reveal) — don't overclaim
+
+This branch's `.github/reusables/tox-dev/workflow/reusable-tox/hooks/
+post-tox-run/action.yml` is a real, tested hook
+(`tox exec --skip-pkg-install --quiet -- coverage report --format=markdown
+>> "$GITHUB_STEP_SUMMARY"`) presented as "here's how test/coverage
+reporting *should* be architected" — a fix for a real gap, not a
+description of what any production repo already does. Keep these three
+facts separate when talking about it, they're easy to blur together live:
+
+1. **The critique is about the real upstream `reusable-tox.yml`**, not
+   about any caller: it bakes JUnit/Cobertura-summary and Codecov upload
+   into unconditional core steps. That's the thing arguably inconsistent
+   with Pattern 4.
+2. **The real precedent is narrower than our hook**: `ansible/awx-plugins`,
+   `ansible/awx_plugins.interfaces`, and `aio-libs/propcache` each have a
+   real `post-tox-job` hook (note: different hook point from ours) gated
+   on `toxenv == 'pre-commit'` that uploads MyPy coverage to **Coveralls**
+   — proof hooks can carry reporting, but narrower (one tool's coverage,
+   one external service) than a general pattern.
+3. **The one-liner itself is real** (`aio-libs/propcache` uses this exact
+   `coverage report --format=markdown` command) **but lives in a
+   hand-rolled `test:` job there that doesn't call `reusable-tox.yml` at
+   all.** If a participant asks "so does propcache do this via a hook?" —
+   the honest answer is no, not yet; this workshop's `post-tox-run` hook is
+   a synthesis of a real technique wired into the real extension
+   mechanism, not a citation of an existing hook.
+
+If short on time, cut this reveal before cutting the real-production-hook
+reveal (cheroot/awx-plugins release automation) — see `SCHEDULE.md`'s
+overflow cut-order.
+
 ## Attribution — say it this way on stage
 
 - `--notest` two-phase provisioning: "an idea from tox's own `--notest`
