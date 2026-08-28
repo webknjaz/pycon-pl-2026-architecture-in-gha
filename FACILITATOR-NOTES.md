@@ -6,14 +6,20 @@ Companion to `../SCHEDULE.md`, `../review/SYNTHESIS.md`, and
 
 ## Timing cheat-sheet (see SCHEDULE.md for full detail)
 
-- Zero-slack: the 1:20–1:30 break, and the Phase-B aha-moment slot
+- Zero-slack: the 1:20–1:30 break, and the Phase-B hands-on slot
   (1:00–1:20). Trim the break-something-on-purpose demo's own runtime if
   Phase B is running long — never the break.
-- First cut if running over: Q&A → alternatives discussion → Codecov/steps
-  walkthrough → post-tox-job mention → sdist-checkout mention.
-- Every CI-dependent demo has a pre-recorded fallback. Default to showing
-  it; treat any live run as a background bonus, never something the room
-  waits on.
+- First cut if running over: Q&A → alternatives discussion → `steps`-output
+  walkthrough → real-production-hook reveal (Phase C hands-on block) →
+  `post-tox-job` mention → sdist-checkout mention. (Codecov itself isn't a
+  cut item — it's not taught as core behavior at all, see `SCHEDULE.md`'s
+  2:08–2:26 note. The coverage-reporting hook reveal at 1:30–1:38 is now
+  the *last* thing to cut in Phase C, not the first — it's the direct
+  replacement for what Phase B used to teach, not a bonus add-on.)
+- **No pre-recorded fallbacks exist for any demo — every phase runs live,
+  the timing risk is knowingly accepted.** See `../CONTINGENCY.md`'s
+  "Per-phase live-demo risk" section for the live-only mitigation per
+  phase.
 
 ## Mistakes to watch for while circulating (predicted, not observed — this is a first run)
 
@@ -21,10 +27,13 @@ Companion to `../SCHEDULE.md`, `../review/SYNTHESIS.md`, and
   natural mistake to write `if: hashFiles(...) == 'true'` by analogy with
   boolean checks elsewhere, but it returns a hash string or empty string,
   never a boolean. Watch for this in the Phase C hook exercise.
-- **Forgetting `passenv`** in a from-scratch `tox.ini` — the exact bug this
-  template's `commands_post` hit during authoring (see `tox.ini`'s comment).
-  If someone's `test-result-files` output never appears, this is the first
-  thing to check.
+- **`[testenv:pre-commit]`'s `pass_env = {[testenv]pass_env}` is a small,
+  real example of tox's cross-section substitution syntax** — worth a
+  10-second aside if anyone reads `tox.ini` closely: it pulls in `[testenv]`'s
+  own `pass_env` list (currently empty) and appends `SKIP`, so `SKIP=<hook-id>`
+  set by whoever invokes `tox -e pre-commit` reaches the actual `pre-commit`
+  process. Confirmed working end-to-end (`SKIP=ruff-format-first-pass tox -e
+  pre-commit` correctly skips just that hook).
 - **`{posargs}` append confusion is plausible** — passing `tox-run-posargs`
   reads like it should *add to* the `tox.ini` default rather than replace
   it wholesale; it doesn't. Worth a one-line reminder mid-Phase-B.
@@ -75,15 +84,19 @@ line, not as a script to expect verbatim:
   test I know will fail," that's a good follow-up prompt to get to `xfail`
   from the discussion instead of just stating it.
 
-## Coverage-reporting hook reveal (1:38–1:58, second reveal) — don't overclaim
+## Coverage-reporting hook demo (1:30–1:38, start of Phase C) — don't overclaim
 
 This branch's `.github/reusables/tox-dev/workflow/reusable-tox/hooks/
 post-tox-run/action.yml` is a real, tested hook
 (`tox exec --skip-pkg-install --quiet -- coverage report --format=markdown
->> "$GITHUB_STEP_SUMMARY"`) presented as "here's how test/coverage
-reporting *should* be architected" — a fix for a real gap, not a
-description of what any production repo already does. Keep these three
-facts separate when talking about it, they're easy to blur together live:
+>> "$GITHUB_STEP_SUMMARY"`), shown live to the whole room right as Pattern 4
+opens — it's the direct answer to "whatever happened to the outputs demo
+Phase B skipped?" (Phase B deliberately never built the `commands_post`/
+`$GITHUB_OUTPUT` mechanism; this hook is why). Presented as "here's how
+test/coverage reporting *should* be architected" — a fix for a real gap,
+not a description of what any production repo already does. Keep these
+three facts separate when talking about it, they're easy to blur together
+live:
 
 1. **The critique is about the real upstream `reusable-tox.yml`**, not
    about any caller: it bakes JUnit/Cobertura-summary and Codecov upload
@@ -103,9 +116,11 @@ facts separate when talking about it, they're easy to blur together live:
    a synthesis of a real technique wired into the real extension
    mechanism, not a citation of an existing hook.
 
-If short on time, cut this reveal before cutting the real-production-hook
-reveal (cheroot/awx-plugins release automation) — see `SCHEDULE.md`'s
-overflow cut-order.
+**Cut-order note (updated):** this demo now closes the loop Phase B
+deliberately left open — it's connective tissue for the curriculum's own
+narrative, not a bonus. If short on time, cut the real-production-hook
+reveal in Phase C's hands-on block (cheroot/awx-plugins release automation)
+*before* cutting this one — see `SCHEDULE.md`'s overflow cut-order.
 
 ## Attribution — say it this way on stage
 
