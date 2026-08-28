@@ -15,57 +15,63 @@ Companion to `../SCHEDULE.md`, `../review/SYNTHESIS.md`, and
   it; treat any live run as a background bonus, never something the room
   waits on.
 
-## Common mistakes to watch for while circulating
+## Mistakes to watch for while circulating (predicted, not observed — this is a first run)
 
-- **Confusing `hashFiles() != ''` truthiness** — participants sometimes
-  write `if: hashFiles(...) == 'true'`; it returns a hash string or empty
-  string, never a boolean. Watch for this in the Phase C hook exercise.
+- **`hashFiles() != ''` truthiness is an easy one to get wrong** — it's a
+  natural mistake to write `if: hashFiles(...) == 'true'` by analogy with
+  boolean checks elsewhere, but it returns a hash string or empty string,
+  never a boolean. Watch for this in the Phase C hook exercise.
 - **Forgetting `passenv`** in a from-scratch `tox.ini` — the exact bug this
   template's `commands_post` hit during authoring (see `tox.ini`'s comment).
   If someone's `test-result-files` output never appears, this is the first
   thing to check.
-- **`{posargs}` append confusion** — participants sometimes expect passing
-  `tox-run-posargs` to *add to* the `tox.ini` default rather than replace it
-  wholesale. Worth a one-line reminder mid-Phase-B.
-- **Composite action schema unfamiliarity** — `inputs:`/`runs: using:
-  composite`/`steps:` is a new schema for most attendees at the stated
-  prerequisite floor (one workflow written). Expect to re-explain the
-  `runs:` block shape at least once per table/pair during Phase C.
+- **`{posargs}` append confusion is plausible** — passing `tox-run-posargs`
+  reads like it should *add to* the `tox.ini` default rather than replace
+  it wholesale; it doesn't. Worth a one-line reminder mid-Phase-B.
+- **Composite action schema unfamiliarity is likely** — `inputs:`/`runs:
+  using: composite`/`steps:` is a new schema for most attendees at the
+  stated prerequisite floor (one workflow written). Budget time to
+  re-explain the `runs:` block shape at least once per table/pair during
+  Phase C.
 
 ## Answer to the Pattern 1 taxonomy exercise (0:28–0:40)
 
 If the hypothetical new input is "install a system package before
 checkout" — this is **not** an input at all; it's a hook
-(`post-src-checkout`), because it's *behavior*, not *data*. This is
-usually the trick participants miss: not every new requirement is a new
-input. Use it to segue directly into why Pattern 4 exists.
+(`post-src-checkout`), because it's *behavior*, not *data*. The likely
+trap here is treating every new requirement as a new input — not every
+one is. Use it to segue directly into why Pattern 4 exists.
 
 ## Design-first framing questions — expected answers (Patterns 2, 3, 5)
 
 Pattern 1 (above) and Pattern 4 already pose a question before revealing
 the mechanism. These three round out the other patterns the same way —
-posed in `../SCHEDULE.md`'s per-block notes, expected answers here so
-you're not deriving them live:
+posed in `../SCHEDULE.md`'s per-block notes. Below are **plausible answers
+to anticipate, not answers observed from a prior run of this workshop** —
+this is the first time it's being given; use these to prepare a bridge
+line, not as a script to expect verbatim:
 
 - **Pattern 2 (0:40–0:50):** "How would you test 5 Python versions if the
-  reusable workflow only takes one?" Typical answers: "call it in a loop,"
-  "duplicate the job 5 times," occasionally someone already knows
-  `strategy: matrix:`. Whatever they propose, point out it requires
-  *editing the reusable workflow* to add iteration — then reveal that
-  native GH Actions matrix strategy needs zero changes to it at all,
-  because the caller owns the loop.
+  reusable workflow only takes one?" Plausible answers: "call it in a
+  loop," "duplicate the job 5 times," or someone may already know
+  `strategy: matrix:`. Whatever comes up, point out it requires *editing
+  the reusable workflow* to add iteration — then reveal that native GH
+  Actions matrix strategy needs zero changes to it at all, because the
+  caller owns the loop. If nothing comes up, offer "duplicate the job" as
+  the strawman yourself.
 - **Pattern 3 (0:50–1:00):** "How long does it take you to tell
-  'environment broke' from 'test failed' in your own CI?" Typical answer:
-  "I have to scroll/read the log." Bridge line: `--notest` isn't a
-  nice-to-have verbosity trick, it's a *structural* separation — which
-  stage ran tells you the answer before you read a single log line.
+  'environment broke' from 'test failed' in your own CI?" A plausible
+  answer is "I have to scroll/read the log" — if so, bridge with:
+  `--notest` isn't a nice-to-have verbosity trick, it's a *structural*
+  separation — which stage ran tells you the answer before you read a
+  single log line.
 - **Pattern 5 (1:58–2:08):** "Should a Python 3.15 alpha test failure fail
-  your whole CI?" Typical answers split between "no, alphas are expected to
-  be broken sometimes" and "depends, make it configurable." Both are
-  right, which is exactly the point: the real workflow does *both* —
+  your whole CI?" Plausible answers split between "no, alphas are expected
+  to be broken sometimes" and "depends, make it configurable." Both are
+  defensible, which is exactly the point: the real workflow does *both* —
   auto-forgiveness for prerelease version strings (`~`/`-dev`/`alpha`) as
   the one narrow exception, `xfail` as the required explicit override for
-  every other case. If nobody mentions "what about a deliberately-broken
+  every other case. If nobody raises "what about a deliberately-broken
   test I know will fail," that's a good follow-up prompt to get to `xfail`
   from the discussion instead of just stating it.
 
