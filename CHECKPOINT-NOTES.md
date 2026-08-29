@@ -1,21 +1,24 @@
-# What you missed if you jumped straight here (Phase A)
+# What you missed if you jumped straight here (Phase B)
 
-**The idea, not just the code:** a reusable workflow is deliberately
-constrained to one Python version × one OS × one tox environment per call
-(Pattern 1 — singular inputs). That constraint is what makes the *caller's*
-`strategy: matrix:` block (see `ci-cd.yml`) able to own 100% of the
-orchestration decision — the reusable workflow never needs to know how many
-combinations exist, only how to run one of them correctly.
+**The idea, not just the code:** the reusable workflow now runs tox in
+three deliberately separate stages: provision (`--notest`), the real run
+(`id: tox-run`), and a conditional debug rerun on failure. This separation
+means "the environment failed to build" and "a test failed" are never
+ambiguous in the logs — you know which one happened before you even read a
+line of pytest output.
 
-Two small things worth noticing even from a fresh checkout:
+The debug-rerun step ends with `&& exit 1` on purpose — even if the verbose
+rerun happens to pass, the job stays red. A test that fails once and passes
+on retry is *flaky*, not *fine*.
 
-- The job's `name:` expression is a tiny, self-contained example of GitHub
-  Actions ternary-style syntax (`&&`/`||`) and `format()` — useful to
-  recognize before the YAML gets denser in later phases.
-- `continue-on-error` reads `inputs.xfail` **or** a prerelease-Python guess
-  (`~` prefix / `-dev` suffix / `alpha` substring in `python-version`) — this
-  is Pattern 5's one deliberate, narrow exception to "no auto-detection,"
-  revisited properly in Phase D.
+**Notice what's absent:** nothing in this workflow or `tox.ini` renders a
+coverage/test summary anywhere. That's deliberate — the real upstream
+`reusable-tox.yml` bakes this into unconditional core steps (see
+`reference/reusable-tox-annotated.md`), which is arguably inconsistent
+with the extension-point philosophy the whole design is built around. The
+fix is a hook, not `tox.ini` plumbing — see
+`reference/coverage-reporting-hook.md` and the demo at the start of
+Phase C.
 
-Next: `checkout checkpoint/phase-b-three-stage` to see tox actually get
-invoked, in three deliberately separated stages.
+Next: `checkout checkpoint/phase-c-hooks` to see extension points added
+around these three stages.

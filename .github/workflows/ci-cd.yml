@@ -1,7 +1,6 @@
 ---
-# PHASE A caller: a minimal 2-Python matrix. Pattern 2 in action -- this
-# job has ZERO knowledge of tox stages, hooks, or env blocks. It only
-# decides *what* to test; reusable-tox.yml decides *how*.
+# PHASE B caller: same minimal matrix as Phase A, now also supplying the
+# per-stage posargs the reusable workflow's three tox stages consume.
 
 name: CI
 
@@ -29,3 +28,5 @@ jobs:
       toxenv: ${{ matrix.toxenv }}
       timeout-minutes: '5'
       xfail: ${{ matrix.xfail }}
+      tox-run-posargs: --cov-report=xml --junitxml=test-results.xml
+      tox-rerun-posargs: --no-cov --lf -vvvvv

@@ -1,7 +1,8 @@
 ---
-# PHASE A checkpoint: skeleton -- single job, scalar inputs, checkout +
-# setup-python. Nothing runs tox yet -- that's Phase B
-# (checkpoint/phase-b-three-stage).
+# PHASE B checkpoint: adds the three-stage tox execution (provision / run /
+# conditional debug rerun) on top of the Phase A skeleton.
+# Phase C adds: the four hook invocation points around these stages.
+# Phase D adds: the Pattern-5 explicit-env-var block + a realistic matrix.
 
 name: >-
   ❌
@@ -38,6 +39,26 @@ on:
         description: A custom name for the Checks API-reported status
         required: false
         type: string
+      tox-provision-args:
+        description: Tox arguments to pass to the env provisioning run
+        required: false
+        type: string
+      tox-run-args:
+        description: Tox arguments to pass to the regular run
+        required: false
+        type: string
+      tox-rerun-args:
+        description: Tox arguments to pass to the re-attempted run
+        required: false
+        type: string
+      tox-run-posargs:
+        description: Positional arguments to pass to the regular tox run
+        required: false
+        type: string
+      tox-rerun-posargs:
+        description: Positional arguments to pass to the re-attempted tox run
+        required: false
+        type: string
 
 jobs:
   tox:
@@ -67,6 +88,9 @@ jobs:
           ) && true || false
       }}
 
+    outputs:
+      steps: ${{ toJSON(steps) }}
+
     env:
       TOXENV: ${{ inputs.toxenv }}
 
@@ -81,6 +105,71 @@ jobs:
     - name: Grab the source from Git
       uses: actions/checkout@v5
 
-    # Phase B adds: install tox, then the three-stage execution.
-    # Phase C adds: the four hook invocation points around those stages.
-    # Phase D adds: the Pattern-5 explicit-env-var block.
+    - name: Install tox
+      run: python -Im pip install tox tox-uv
+
+    # --- STAGE 1: provision -------------------------------------------
+    - name: >-
+        Pre-populate tox envs: `${{ env.TOXENV }}`
+      run: >-
+        python -Xutf8 -Im
+        tox
+        --parallel auto
+        --parallel-live
+        --skip-missing-interpreters false
+        ${{ inputs.tox-provision-args }}
+        --notest
+
+    # --- STAGE 2: the real run ------------------------------------------
+    - name: >-
+        Run tox envs: `${{ env.TOXENV }}`
+      id: tox-run
+      run: >-
+        python -Xutf8 -Im
+        tox
+        --parallel auto
+        --parallel-live
+        --skip-missing-interpreters false
+        --skip-pkg-install
+        --quiet
+        ${{ inputs.tox-run-args }}
+        ${{
+          inputs.tox-run-posargs != ''
+          && format('-- {0}', inputs.tox-run-posargs)
+          || ''
+        }}
+
+    - name: Explain re-runing the failing tests
+      if: >-
+        !cancelled()
+        && steps.tox-run.outcome == 'failure'
+        && inputs.tox-rerun-posargs != ''
+      run: >-
+        {
+          echo '> [!IMPORTANT]';
+          echo '> The main tox command failed. Re-running now with maximum';
+          echo '> verbosity to help you troubleshoot. This second run is';
+          echo '> intentionally marked failing even if it happens to pass --';
+          echo '> compare the two runs to tell a real failure from a flaky one.';
+        } | tee -a "${GITHUB_STEP_SUMMARY}"
+      shell: bash -eEuo pipefail {0}
+
+    # --- STAGE 3: debug rerun, only on failure --------------------------
+    - name: Re-run the failing tests with maximum verbosity
+      if: >-
+        !cancelled()
+        && steps.tox-run.outcome == 'failure'
+        && inputs.tox-rerun-posargs != ''
+      run: >-  # `exit 1` makes sure that the job remains red with flaky runs
+        python -Xutf8 -Im
+        tox
+        --parallel auto
+        --parallel-live
+        --skip-missing-interpreters false
+        -vvvvv
+        --skip-pkg-install
+        ${{ inputs.tox-rerun-args }}
+        --
+        ${{ inputs.tox-rerun-posargs }}
+        && exit 1
+      shell: bash

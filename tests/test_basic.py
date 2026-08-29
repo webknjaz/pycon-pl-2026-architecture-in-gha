@@ -9,7 +9,7 @@ import pytest
 
 from ci_patterns_demo import greet
 
-BREAK_ME_ON_PURPOSE = False
+BREAK_ME_ON_PURPOSE = True
 
 
 def test_greet_says_hello():
