@@ -15,6 +15,7 @@ on:
 
 jobs:
   tests:
+    name: 🧪 Tests${{ '' }}  # nest jobs under the same sidebar category
     strategy:
       fail-fast: false
       matrix:
