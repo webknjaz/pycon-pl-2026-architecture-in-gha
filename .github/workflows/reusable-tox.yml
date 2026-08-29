@@ -1,9 +1,10 @@
 ---
-# PHASE C checkpoint: adds the four hook invocation points around the
-# Phase B three-stage execution. Each hook is a no-op unless the calling
-# repo actually has the corresponding composite action file -- that's the
-# `hashFiles()`-as-`file.exists()` trick.
-# Phase D adds: the Pattern-5 explicit-env-var block + a realistic matrix.
+# PHASE D checkpoint: adds Pattern 5's explicit color/encoding env block
+# (Exhibit B) on top of Phase C's hooks + three-stage execution. This is
+# the final state of the reusable workflow built live in the workshop --
+# see reference/reusable-tox-annotated.md for the full real production
+# version (22 inputs; this teaching version deliberately keeps only the
+# inputs needed for the 5 patterns).
 
 name: >-
   ❌
@@ -33,7 +34,9 @@ on:
       xfail:
         description: >-
           Whether this job is expected to fail. The job status is treated
-          as successful if this is set to `true`.
+          as successful if this is set to `true`. One deliberate exception
+          exists below: prerelease Pythons get auto-forgiveness without
+          this being set (Pattern 5's one narrow escape hatch).
         required: true
         type: string
       check-name:
@@ -69,6 +72,33 @@ on:
           `job-dependencies-context: $ {{ toJSON(needs) }}`.
         required: false
         type: string
+
+# --- Pattern 5, Exhibit B: "explicit over implicit has a cost" -----------
+# Thirteen different Python/CI tools each recognize a different env var to
+# request colored output -- there is no single shared convention. This
+# block is the explicit price paid so CI logs aren't flat and gray.
+# `TOX_TESTENV_PASSENV` is itself real tox behavior (not a GitHub Actions
+# feature): setting it widens every testenv's passenv list *without*
+# editing tox.ini -- notice tox.ini's own `passenv` line from Phase B/C
+# still works standalone, but a real project would rely on this instead of
+# hand-maintaining passenv per project.
+env:
+  COLOR: >-  # Supposedly, pytest or coveragepy use this
+    yes
+  FORCE_COLOR: 1
+  PY_COLORS: 1
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: 1
+  TOX_PARALLEL_NO_SPINNER: 1
+  TOX_TESTENV_PASSENV: >-
+    CI
+    COLOR
+    FORCE_COLOR
+    GITHUB_ACTIONS
+    GITHUB_OUTPUT
+    PY_COLORS
+    PYTHONIOENCODING
+    PYTHONUTF8
 
 jobs:
   tox:

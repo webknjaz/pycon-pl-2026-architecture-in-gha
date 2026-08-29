@@ -1,10 +1,10 @@
 ---
-# PHASE C caller: adds a second toxenv (`pre-commit`) so the coverage
-# hook's `toxenv`-gated branch is exercised for real -- it fires for `py`
-# (real coverage data exists) and correctly skips for `pre-commit` (no
-# coverage data, gate is toxenv == 'py'). Phase D extends this same
-# [py, pre-commit] dimension to a realistic multi-Python matrix -- nothing
-# new is introduced there, just more legs of what's already here.
+# PHASE D caller: a realistic matrix (3 Python versions × 2 tox envs = 6
+# legs) -- the caller owns 100% of this orchestration decision; the
+# reusable workflow's code hasn't changed to support more legs, because it
+# never needed to know how many there'd be. The `pre-commit` toxenv reuses
+# this repo's own .pre-commit-config.yaml -- a real matrix dimension, not
+# a purpose-built teaching env like `needs-jq` used to be.
 
 name: CI
 
@@ -21,6 +21,7 @@ jobs:
         python-version:
         - '3.11'
         - '3.12'
+        - '3.13'
         toxenv:
         - py
         - pre-commit
@@ -35,3 +36,19 @@ jobs:
       xfail: ${{ matrix.xfail }}
       tox-run-posargs: --cov-report=xml --junitxml=test-results.xml
       tox-rerun-posargs: --no-cov --lf -vvvvv
+
+  # Branch protection's required-checks list breaks every time the matrix
+  # above changes shape -- this job is the fix: one required check, always
+  # correct, regardless of how many legs `tests:` has. `needs.tests.result`
+  # already aggregates across every matrix leg automatically.
+  check:  # This job does nothing and is only used for branch protection
+    if: always()
+    needs:
+    - tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}

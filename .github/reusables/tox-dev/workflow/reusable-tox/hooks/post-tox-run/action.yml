@@ -3,7 +3,7 @@
 # summary. Gated on `toxenv == 'py'` -- the same idiom the pattern always
 # uses (fromJSON(inputs.calling-job-context).toxenv == '...') -- so it
 # doesn't try to report coverage for a leg that never ran pytest-cov (e.g.
-# a `pre-commit` toxenv leg in the caller matrix).
+# the `pre-commit` toxenv leg in this repo's own caller matrix).
 #
 # This is the direct answer to "whatever happened to the outputs mechanism
 # Phase B skipped?" -- the real reusable-tox.yml bakes this kind of
