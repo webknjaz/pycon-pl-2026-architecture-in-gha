@@ -1,21 +1,86 @@
 ---
-# STARTER STATE. Build this during Phase A of the workshop:
-#   - `on: workflow_call:` inputs: python-version, runner-vm-os, toxenv,
-#     timeout-minutes, xfail, check-name (all scalar strings, no arrays)
-#   - a single job named `tox`
-#   - `runs-on`, `timeout-minutes`, `continue-on-error` (xfail-or-prerelease)
-#   - `env: TOXENV: ${{ inputs.toxenv }}`
-#   - actions/setup-python + actions/checkout steps
-#
-# Stuck? `git checkout checkpoint/phase-a-skeleton` to see the finished
-# version, then come back to `main` and keep building from there.
+# PHASE A checkpoint: skeleton -- single job, scalar inputs, checkout +
+# setup-python. Nothing runs tox yet -- that's Phase B
+# (checkpoint/phase-b-three-stage).
+
+name: >-
+  ❌
+  [DO NOT CLICK]
+  Reusable Tox (workshop build)
 
 on:
   workflow_call:
-    inputs: {}
+    inputs:
+      python-version:
+        description: Python version to provision in the VM
+        required: true
+        type: string
+      runner-vm-os:
+        description: VM OS to use
+        default: ubuntu-latest
+        required: false
+        type: string
+      toxenv:
+        description: Name of the tox environment to use
+        required: true
+        type: string
+      timeout-minutes:
+        description: Deadline for the job to complete
+        required: true
+        type: string
+      xfail:
+        description: >-
+          Whether this job is expected to fail. The job status is treated
+          as successful if this is set to `true`.
+        required: true
+        type: string
+      check-name:
+        description: A custom name for the Checks API-reported status
+        required: false
+        type: string
 
 jobs:
   tox:
-    runs-on: ubuntu-latest
+    name: >-
+      ${{
+        inputs.check-name
+        && inputs.check-name
+        || format(
+             '{0}@🐍{1}@💻{2}',
+             inputs.toxenv,
+             inputs.python-version,
+             inputs.runner-vm-os
+           )
+      }}
+
+    runs-on: ${{ inputs.runner-vm-os }}
+
+    timeout-minutes: ${{ fromJSON(inputs.timeout-minutes) }}
+
+    continue-on-error: >-
+      ${{
+          (
+            fromJSON(inputs.xfail) ||
+            startsWith(inputs.python-version, '~') ||
+            endsWith(inputs.python-version, '-dev') ||
+            contains(inputs.python-version, 'alpha')
+          ) && true || false
+      }}
+
+    env:
+      TOXENV: ${{ inputs.toxenv }}
+
     steps:
-    - run: echo "Build me during Phase A!"
+    - name: >-
+        Switch to using Python v${{ inputs.python-version }}
+        by default
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Grab the source from Git
+      uses: actions/checkout@v5
+
+    # Phase B adds: install tox, then the three-stage execution.
+    # Phase C adds: the four hook invocation points around those stages.
+    # Phase D adds: the Pattern-5 explicit-env-var block.

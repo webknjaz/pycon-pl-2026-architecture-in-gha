@@ -1,9 +1,7 @@
 ---
-# STARTER STATE. Build this during Phase A: a `strategy: matrix:` over at
-# least two Python versions, calling ./.github/workflows/reusable-tox.yml
-# once per matrix leg via `uses:` + `with:`.
-#
-# Stuck? `git checkout checkpoint/phase-a-skeleton` for the finished version.
+# PHASE A caller: a minimal 2-Python matrix. Pattern 2 in action -- this
+# job has ZERO knowledge of tox stages, hooks, or env blocks. It only
+# decides *what* to test; reusable-tox.yml decides *how*.
 
 name: CI
 
@@ -12,4 +10,22 @@ on:
     branches: [main]
   pull_request:
 
-jobs: {}
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+        - '3.11'
+        - '3.12'
+        toxenv:
+        - py
+        xfail:
+        - false
+    uses: ./.github/workflows/reusable-tox.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      runner-vm-os: ubuntu-latest
+      toxenv: ${{ matrix.toxenv }}
+      timeout-minutes: '5'
+      xfail: ${{ matrix.xfail }}
