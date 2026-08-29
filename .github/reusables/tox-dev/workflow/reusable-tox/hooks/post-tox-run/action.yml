@@ -1,0 +1,43 @@
+---
+# Phase C's hook exercise: render coverage as a markdown table in the job
+# summary. Gated on `toxenv == 'py'` -- the same idiom the pattern always
+# uses (fromJSON(inputs.calling-job-context).toxenv == '...') -- so it
+# doesn't try to report coverage for a leg that never ran pytest-cov (e.g.
+# a `pre-commit` toxenv leg in the caller matrix).
+#
+# This is the direct answer to "whatever happened to the outputs mechanism
+# Phase B skipped?" -- the real reusable-tox.yml bakes this kind of
+# reporting into unconditional CORE steps (test-summary/action,
+# irongut/CodeCoverageSummary, codecov-action); that's arguably
+# inconsistent with Pattern 4's own "extend without modifying core"
+# philosophy. This hook is how you'd actually place it correctly. See
+# reference/coverage-reporting-hook.md for the full story and correct
+# attribution (the one-liner is real, from aio-libs/propcache, but lives
+# in a hand-rolled non-tox job there -- nobody has this exact hook in
+# production yet).
+
+inputs:
+  calling-job-context:
+    description: A JSON string with the calling job's inputs
+    type: string
+  current-job-steps:
+    description: A JSON string with this job's steps so far
+    type: string
+  job-dependencies-context:
+    default: >-
+      {}
+    description: A JSON string with the calling workflow's `needs` context
+    required: false
+    type: string
+
+runs:
+  using: composite
+  steps:
+  - name: Append coverage results to the job summary
+    if: >-
+      !cancelled()
+      && fromJSON(inputs.calling-job-context).toxenv == 'py'
+    run: >-
+      tox exec --skip-pkg-install --quiet -- coverage report --format=markdown
+      >> "${GITHUB_STEP_SUMMARY}"
+    shell: bash

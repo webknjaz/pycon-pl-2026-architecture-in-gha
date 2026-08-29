@@ -1,7 +1,8 @@
 ---
-# PHASE B checkpoint: adds the three-stage tox execution (provision / run /
-# conditional debug rerun) on top of the Phase A skeleton.
-# Phase C adds: the four hook invocation points around these stages.
+# PHASE C checkpoint: adds the four hook invocation points around the
+# Phase B three-stage execution. Each hook is a no-op unless the calling
+# repo actually has the corresponding composite action file -- that's the
+# `hashFiles()`-as-`file.exists()` trick.
 # Phase D adds: the Pattern-5 explicit-env-var block + a realistic matrix.
 
 name: >-
@@ -59,6 +60,15 @@ on:
         description: Positional arguments to pass to the re-attempted tox run
         required: false
         type: string
+      job-dependencies-context:
+        default: >-
+          {}
+        description: >-
+          The `$ {{ needs }}` context passed from the calling workflow
+          encoded as a JSON string:
+          `job-dependencies-context: $ {{ toJSON(needs) }}`.
+        required: false
+        type: string
 
 jobs:
   tox:
@@ -105,6 +115,19 @@ jobs:
     - name: Grab the source from Git
       uses: actions/checkout@v5
 
+    - name: 🪝 Invoke the in-repo `post-src-checkout` hook (if exists)
+      id: hook-post-src-checkout
+      if: >-  # `hashFiles()` is used as a rudimentary `file.exists()`
+        !cancelled()
+        && hashFiles(
+          '.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-src-checkout/action.yml'
+        ) != ''
+      uses: ./.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-src-checkout
+      with:
+        calling-job-context: ${{ toJSON(inputs) }}
+        current-job-steps: ${{ toJSON(steps) }}
+        job-dependencies-context: ${{ inputs.job-dependencies-context }}
+
     - name: Install tox
       run: python -Im pip install tox tox-uv
 
@@ -119,6 +142,19 @@ jobs:
         --skip-missing-interpreters false
         ${{ inputs.tox-provision-args }}
         --notest
+
+    - name: 🪝 Invoke the in-repo `prepare-for-tox-run` hook (if exists)
+      id: hook-prepare-for-tox-run
+      if: >-
+        !cancelled()
+        && hashFiles(
+          '.github/reusables/tox-dev/workflow/reusable-tox/hooks/prepare-for-tox-run/action.yml'
+        ) != ''
+      uses: ./.github/reusables/tox-dev/workflow/reusable-tox/hooks/prepare-for-tox-run
+      with:
+        calling-job-context: ${{ toJSON(inputs) }}
+        current-job-steps: ${{ toJSON(steps) }}
+        job-dependencies-context: ${{ inputs.job-dependencies-context }}
 
     # --- STAGE 2: the real run ------------------------------------------
     - name: >-
@@ -138,6 +174,20 @@ jobs:
           && format('-- {0}', inputs.tox-run-posargs)
           || ''
         }}
+
+    - name: 🪝 Invoke the in-repo `post-tox-run` hook (if exists)
+      id: hook-post-tox-run
+      if: >-
+        !cancelled()
+        && steps.tox-run.outcome != 'skipped'
+        && hashFiles(
+          '.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-tox-run/action.yml'
+        ) != ''
+      uses: ./.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-tox-run
+      with:
+        calling-job-context: ${{ toJSON(inputs) }}
+        current-job-steps: ${{ toJSON(steps) }}
+        job-dependencies-context: ${{ inputs.job-dependencies-context }}
 
     - name: Explain re-runing the failing tests
       if: >-
@@ -173,3 +223,16 @@ jobs:
         ${{ inputs.tox-rerun-posargs }}
         && exit 1
       shell: bash
+
+    - name: 🪝 Invoke the in-repo `post-tox-job` hook (if exists)
+      id: hook-post-tox-job
+      if: >-  # fires even if `tox-run` never ran -- last-chance cleanup hook
+        !cancelled()
+        && hashFiles(
+          '.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-tox-job/action.yml'
+        ) != ''
+      uses: ./.github/reusables/tox-dev/workflow/reusable-tox/hooks/post-tox-job
+      with:
+        calling-job-context: ${{ toJSON(inputs) }}
+        current-job-steps: ${{ toJSON(steps) }}
+        job-dependencies-context: ${{ inputs.job-dependencies-context }}

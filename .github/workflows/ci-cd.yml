@@ -1,6 +1,10 @@
 ---
-# PHASE B caller: same minimal matrix as Phase A, now also supplying the
-# per-stage posargs the reusable workflow's three tox stages consume.
+# PHASE C caller: adds a second toxenv (`pre-commit`) so the coverage
+# hook's `toxenv`-gated branch is exercised for real -- it fires for `py`
+# (real coverage data exists) and correctly skips for `pre-commit` (no
+# coverage data, gate is toxenv == 'py'). Phase D extends this same
+# [py, pre-commit] dimension to a realistic multi-Python matrix -- nothing
+# new is introduced there, just more legs of what's already here.
 
 name: CI
 
@@ -19,6 +23,7 @@ jobs:
         - '3.12'
         toxenv:
         - py
+        - pre-commit
         xfail:
         - false
     uses: ./.github/workflows/reusable-tox.yml
