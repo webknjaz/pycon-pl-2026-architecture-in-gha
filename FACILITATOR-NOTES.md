@@ -156,6 +156,32 @@ narrative, not a bonus. If short on time, cut the real-production-hook
 reveal in Phase C's hands-on block (cheroot/awx-plugins release automation)
 *before* cutting this one — see `SCHEDULE.md`'s overflow cut-order.
 
+## `alls-green` branch-protection gate (2:10–2:31, Integration block) — low-key attribution moment
+
+`ci-cd.yml`'s `check:` job uses `re-actors/alls-green` — this is the
+speaker's own project (already named in the "Remarks" bio field), same
+register as the other attributions below: state it plainly, don't oversell
+it. The real hook (pun intended) is the README's own "Why?" section,
+close to verbatim: naively listing every job in a `check` job's `needs:`
+list has a subtle, easy-to-miss bug — on failure, `check`'s own result
+becomes `skipped`, not `failed`, unless the job also sets `if: always()`
+and does real aggregation logic. That's the concrete pain `alls-green`
+solves, and it's the kind of thing anyone who's fought with branch
+protection + a matrix will recognize immediately.
+
+**Verified, not guessed:** confirmed the real `action.yml` (one required
+input `jobs`, a JSON string via `toJSON(needs)`) and the real usage
+pattern against `cherrypy/cheroot`'s actual `ci-cd.yml`. `needs.tests.result`
+aggregates correctly across all 6 matrix legs automatically — no per-leg
+handling needed, don't imply there's any special trick required for a
+matrixed `needs:` job. One clean contrast worth a sentence: `alls-green` is
+referenced via `@release/v1`, a real stable channel — unlike
+`tox-dev/workflow`'s own "DO NOT USE — unstable/experimental"
+self-description, the thing the whole rest of the day has been built
+alongside. Full verification of the `check` job's actual pass/fail
+behavior needs a real Actions run — same live-only posture as everything
+else in this workshop, nothing new here.
+
 ## Attribution — say it this way on stage
 
 - `--notest` two-phase provisioning: "an idea from tox's own `--notest`
@@ -165,5 +191,8 @@ reveal in Phase C's hands-on block (cheroot/awx-plugins release automation)
   coveragepy's CI" — not a precise citation.
 - hashFiles-as-file-exists hook gating: Anthony Sottile,
   `asottile/workflows` — verified exact match, cite with confidence.
+- `re-actors/alls-green`: my own project, low-key not oversold — "I built
+  this too, it's what CPython and this repo both use for branch
+  protection."
 - "Novel approach" claim: frame as "my own design, refined across 30+ repos
   I maintain," not an industry-consensus claim.
